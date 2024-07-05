@@ -13,7 +13,7 @@ fn setup(mut commands: Commands) {
     commands.spawn(TiledCameraBundle::new().with_tile_count([15, 15]));
     commands.spawn(SpriteBundle {
         sprite: Sprite {
-            color: Color::BLUE,
+            color: Color::Srgba(bevy::color::palettes::css::BLUE),
             custom_size: Some(Vec2::splat(15.0)),
             ..Default::default()
         },

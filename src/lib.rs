@@ -348,9 +348,6 @@ impl TiledCamera {
         self.zoom
     }
 
-    // MIT License
-    // Copyright (c) 2021 Aevyrie
-    // https://github.com/aevyrie/bevy_mod_raycast
     /// Convert a screen position (IE: The mouse cursor position) to it's corresponding world position.
     pub fn screen_to_world(
         &self,
@@ -358,29 +355,7 @@ impl TiledCamera {
         camera: &Camera,
         camera_transform: &GlobalTransform,
     ) -> Option<Vec2> {
-        let screen_size = self.vp_size.as_vec2();
-        let screen_pos = (screen_pos - self.vp_pos.as_vec2()).round();
-
-        let view = camera_transform.compute_matrix();
-        let projection = camera.projection_matrix();
-
-        // 2D Normalized device coordinate cursor position from (-1, -1) to (1, 1)
-        let cursor_ndc = (screen_pos / screen_size) * 2.0 - Vec2::from([1.0, 1.0]);
-        let ndc_to_world: Mat4 = view * projection.inverse();
-        let world_to_ndc = projection * view;
-
-        // Calculate the camera's near plane using the projection matrix
-        let projection = projection.to_cols_array_2d();
-        let camera_near = (2.0 * projection[3][2]) / (2.0 * projection[2][2] - 2.0);
-
-        // Compute the cursor position at the near plane. The bevy camera looks at -Z.
-        let ndc_near = world_to_ndc.transform_point3(-Vec3::Z * camera_near).z;
-        let cursor_pos_near = ndc_to_world.transform_point3(cursor_ndc.extend(ndc_near));
-        let tile_size = self.grid.tile_size_world();
-        let cursor_pos_near = cursor_pos_near.truncate() * tile_size;
-        // Former viewport issue - had to flip y. Was fixed in 0.9 release
-        //cursor_pos_near.y = -cursor_pos_near.y;
-        Some(cursor_pos_near)
+        camera.viewport_to_world_2d(camera_transform, screen_pos)
     }
 
     /// Converts a world position to a screen position (0..resolution)
@@ -390,25 +365,7 @@ impl TiledCamera {
         camera: &Camera,
         camera_transform: &GlobalTransform,
     ) -> Option<Vec2> {
-        let window_size = self.vp_size.as_vec2();
-
-        // Build a transform to convert from world to NDC using camera data
-        let world_to_ndc: Mat4 =
-            camera.projection_matrix() * camera_transform.compute_matrix().inverse();
-        let ndc_space_coords: Vec3 = world_to_ndc.project_point3(world_pos.as_vec2().extend(0.0));
-
-        // NDC z-values outside of 0 < z < 1 are outside the camera frustum and are thus not in screen space
-        if ndc_space_coords.z < 0.0 || ndc_space_coords.z > 1.0 {
-            return None;
-        }
-
-        // Once in NDC space, we can discard the z element and rescale x/y to fit the screen
-        let screen_space_coords = (ndc_space_coords.truncate() + Vec2::ONE) / 2.0 * window_size;
-        if !screen_space_coords.is_nan() {
-            Some((screen_space_coords + self.vp_pos.as_vec2()).round())
-        } else {
-            None
-        }
+        camera.world_to_viewport(camera_transform, world_pos.as_vec2().extend(0.0))
     }
 
     /// Retrieve the camera's [`WorldGrid`].

@@ -10,7 +10,7 @@ use bevy_tiled_camera::{TiledCamera, TiledCameraBundle, TiledCameraPlugin};
 
 fn main() {
     App::new()
-        .insert_resource(ClearColor(Color::rgb_u8(0, 68, 153)))
+        .insert_resource(ClearColor(Color::srgb_u8(0, 68, 153)))
         .add_plugins((
             TiledCameraPlugin,
             DefaultPlugins.set(ImagePlugin::default_nearest()),
